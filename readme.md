@@ -1,3 +1,16 @@
+## Project Setup
+
+- Steps:
+1. Clone project
+2. cd to project
+3. run 'composer install'
+4. run 'cp .env.example .env'
+5. Edit .env file to your liking
+6. run 'php artisan key:generate'
+7. run 'php artisan jwt:secret'
+8. run 'php artisan migrate'
+9. run 'php artisan db:seed --class=AuthTablesSeeder'
+
 # Lumen PHP Framework
 
 [![Build Status](https://travis-ci.org/laravel/lumen-framework.svg)](https://travis-ci.org/laravel/lumen-framework)
