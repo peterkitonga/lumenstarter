@@ -1,0 +1,7 @@
+/vendor
+/.idea
+/public/.DS_Store
+.DS_Store
+Homestead.json
+Homestead.yaml
+.env

@@ -1,0 +1,273 @@
+<?php
+
+namespace App\Http\Controllers\V1\Auth;
+
+use App\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use App\Mail\MailActivation;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\Controller;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+class AuthsController extends Controller
+{
+    /**
+     * Constructor for the controller
+     * 
+     * __construct
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        
+    }
+
+    /**
+     * Get the token array structure.
+     *
+     * @param  string $token
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function respondWithToken($token)
+    {
+        return response()->json([
+            'status' => 'success',
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => app('auth')->factory()->getTTL() * 60
+        ]);
+    }
+
+    /**
+     * Register a user and return a JWT
+     *
+     * @param Request $request
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function register(Request $request)
+    {
+        $this->validate($request, [
+            'name' => 'required|max:255',
+            'email' => 'required|email|max:255|unique:users',
+            'password' => 'required|min:6|confirmed|same:password_confirmation',
+            'password_confirmation' => 'required|min:6'
+        ]);
+
+        try 
+        {
+            // Added new user with the given details
+            $user = new User([
+                'name' => $request->get('name'), 
+                'email' => $request->get('email'), 
+                'password' => Hash::make($request->get('password')),
+                'activation_code' => str_random(60),
+                'is_logged_in' => 0
+            ]);
+            $user->save();
+
+            // Assign role 'subscriber' to added user
+            $user->roles()->attach(2);
+
+            // Send Activation Mail
+            $email = new MailActivation(new User(['activation_code' => $user->activation_code, 'name' => $user->name]));
+            Mail::to($user->email)->send($email);
+
+            return response()->json(['status' => 'success', 'message' => 'You have successfully registered. Please click on the activation link sent to your email']);
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Get a JWT via given credentials.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function login(Request $request)
+    {
+        $this->validate($request, [
+            'email' => 'required',
+            'password' => 'required'
+        ]);
+
+        try {
+            $credentials = $request->all();
+            
+            // Check and authenticate credentials given
+            if ($token = app('auth')->attempt($credentials)) 
+            {
+                // Retrieve user details
+                $user = app('auth')->user();
+
+                // Update user to status 'online'
+                User::query()->findOrFail($user['id'])->update(['is_logged_in' => 1]);
+
+                return $this->respondWithToken($token);
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'Unauthorized, credentials given are not correct'], 401);
+            }
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Activate the user with the given activation code.
+     *
+     * @param mixed $code
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function activate($code)
+    {
+        try {
+            $user = User::query()->where('activation_code', '=', $code)->firstOrFail();
+
+            // Activate the user
+            $user->activated();
+
+            return response()->json(['status' => 'success', 'message' => 'Your account has been successfully activated. You may proceed to login']);
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Get the authenticated user.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function profile()
+    {
+        try {
+            // Retrieve user details
+            $user = app('auth')->user();
+
+            return response()->json(['status' => 'success', 'data' => $user]);
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Update the authenticated user's profile.
+     *
+     * @param Request $request
+     * 
+     * @return void
+     */
+    public function update(Request $request)
+    {
+        $this->validate($request, [
+            'name' => 'required|max:255',
+            'email' => 'required|email|max:255',
+            'image_select' => 'sometimes'
+        ]);
+
+        try {
+            $id = app('auth')->id();
+            $user = User::query()->findOrFail($id);
+
+            // Check if an image upload exists in the request
+            if($request->has('image_select'))
+            {
+                $image = $request->get('image_select');
+            } else {
+                $image = $user['profile_image'];
+            }
+
+            // Update the user's details
+            $user->update([
+                'name' => $request->get('name'),
+                'email' => $request->get('email'),
+                'profile_image' => $image
+            ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Successfully updated your profile', 'data' => $user]);
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Updates the authenticated user's password.
+     *
+     * @param Request $request
+     * 
+     * @return void
+     */
+    public function password(Request $request)
+    {
+        $this->validate($request, [
+            'current_password' => 'required|min:6',
+            'password' => 'required|min:6|confirmed|different:current_password',
+            'password_confirmation' => 'required|min:6'
+        ]);
+
+        try {
+            $user = app('auth')->user();
+            $profileId = $user->id;
+            $hashedPassword = $user->password;
+
+            // Check if the current user's password matched the one in the request
+            if (Hash::check($request->get('current_password'), $hashedPassword)) {
+                $user = User::query()->findOrFail($profileId);
+
+                // Update the password
+                $user->update(['password' => Hash::make($request->get('password'))]);
+    
+                return response()->json(['status' => 'success', 'message' => 'Successfully updated your password']);
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'The old password you entered is incorrect']);
+            }
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Refresh a token.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function refresh()
+    {
+        try {
+            // Refresh the expired JWT token
+            $token = app('auth')->refresh();
+
+            return $this->respondWithToken($token);
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Log the user out (Invalidate the token).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function logout()
+    {
+        try {
+            // Retrieve user details
+            $user = app('auth')->user();
+
+            // Update user to status 'online'
+            User::query()->findOrFail($user['id'])->update(['is_logged_in' => 0, 'last_seen' => Carbon::now()->toDateTimeString()]);
+
+            // Logout user and invalidate JWT token
+            app('auth')->logout();
+
+            return response()->json(['status' => 'success', 'message' => 'Successfully logged out']);
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+        }
+    }
+}
