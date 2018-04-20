@@ -11,6 +11,7 @@
 |
 */
 
+$router = app()->router;
 $router->get('/', function () use ($router) {
     return response()->json(['status' => 'success', 'message' => 'Welcome to '.env('MAIL_FROM_NAME'), 'framework' => $router->app->version()]);
 });
@@ -35,7 +36,6 @@ $router->group(['prefix' => 'api/v1', 'namespace' => 'V1'], function () use ($ro
             $router->get('user', ['uses' => 'Auth\AuthsController@profile']);
             $router->put('user/update', ['uses' => 'Auth\AuthsController@update']);
             $router->put('user/password', ['uses' => 'Auth\AuthsController@password']);
-            $router->get('refresh', ['uses' => 'Auth\AuthsController@refresh']);
             $router->get('logout', ['uses' => 'Auth\AuthsController@logout']);
         });
     
