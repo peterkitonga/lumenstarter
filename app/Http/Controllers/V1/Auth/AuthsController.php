@@ -9,6 +9,7 @@ use App\Mail\MailActivation;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AuthsController extends Controller
@@ -46,17 +47,21 @@ class AuthsController extends Controller
      * Register a user and return a JWT
      *
      * @param Request $request
-     * 
+     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request)
     {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|max:255',
             'email' => 'required|email|max:255|unique:users',
             'password' => 'required|min:6|confirmed|same:password_confirmation',
             'password_confirmation' => 'required|min:6'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+        }
 
         try 
         {
@@ -91,10 +96,14 @@ class AuthsController extends Controller
      */
     public function login(Request $request)
     {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'email' => 'required',
             'password' => 'required'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+        }
 
         try {
             $credentials = $request->all();
@@ -159,16 +168,19 @@ class AuthsController extends Controller
      * Update the authenticated user's profile.
      *
      * @param Request $request
-     * 
-     * @return void
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request)
     {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|max:255',
             'email' => 'required|email|max:255',
             'image_select' => 'sometimes'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+        }
 
         try {
             $id = app('auth')->id();
@@ -199,16 +211,19 @@ class AuthsController extends Controller
      * Updates the authenticated user's password.
      *
      * @param Request $request
-     * 
-     * @return void
+     * @return \Illuminate\Http\JsonResponse
      */
     public function password(Request $request)
     {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'current_password' => 'required|min:6',
             'password' => 'required|min:6|confirmed|different:current_password',
             'password_confirmation' => 'required|min:6'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+        }
 
         try {
             $user = app('auth')->user();

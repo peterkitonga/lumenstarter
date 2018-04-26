@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Support\Facades\Validator;
 
 class UsersController extends Controller
 {
@@ -27,7 +27,7 @@ class UsersController extends Controller
     /**
      * Displays a list of records.
      *
-     * @return void
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
@@ -45,16 +45,19 @@ class UsersController extends Controller
      * Stores a given record.
      *
      * @param Request $request
-     * 
-     * @return void
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|max:255',
             'email' => 'required|email|max:255|unique:users',
             'role_select' => 'required'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+        }
 
         try {
             // Get the role selected
@@ -89,9 +92,8 @@ class UsersController extends Controller
     /**
      * Show the given record.
      *
-     * @param mixed $id
-     * 
-     * @return void
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
@@ -108,16 +110,19 @@ class UsersController extends Controller
      * Update the given record.
      *
      * @param Request $request
-     * @param mixed $id
-     * 
-     * @return void
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'name' => 'required|max:255',
             'email' => 'required|email|max:255'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+        }
 
         try {
             $user = User::query()->findOrFail($id);
@@ -138,15 +143,18 @@ class UsersController extends Controller
      * Update the role of the given record.
      *
      * @param Request $request
-     * @param mixed $id
-     * 
-     * @return void
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function role(Request $request, $id)
     {
-        $this->validate($request, [
+        $validator = Validator::make($request->all(), [
             'role_select' => 'required'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+        }
 
         try {
             $roleId = $request->get('role_select');
@@ -166,9 +174,8 @@ class UsersController extends Controller
     /**
      * Deactivate the given record.
      *
-     * @param mixed $id
-     * 
-     * @return void
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function deactivate($id)
     {
@@ -183,13 +190,12 @@ class UsersController extends Controller
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
         }
     }
-    
+
     /**
      * Reactivate the given record.
      *
-     * @param mixed $id
-     * 
-     * @return void
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function reactivate($id)
     {
@@ -208,9 +214,8 @@ class UsersController extends Controller
     /**
      * Delete the given record.
      *
-     * @param mixed $id
-     * 
-     * @return void
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function delete($id)
     {
