@@ -66,6 +66,7 @@ $app->singleton(
 // ]);
 
 $app->routeMiddleware([
+    'cors' => Barryvdh\Cors\HandleCors::class,
     'auth' => App\Http\Middleware\Authenticate::class,
     'access.role' => App\Http\Middleware\CheckAccess::class,
     'jwt.auth' => Tymon\JWTAuth\Http\Middleware\GetUserFromToken::class,
@@ -87,6 +88,7 @@ $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
+$app->register(Barryvdh\Cors\ServiceProvider::class);
 // $app->register(App\Providers\AppServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 
