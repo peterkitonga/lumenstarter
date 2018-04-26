@@ -28,8 +28,9 @@ class Handler extends ExceptionHandler
      *
      * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
      *
-     * @param  \Exception  $e
+     * @param  \Exception $e
      * @return void
+     * @throws Exception
      */
     public function report(Exception $e)
     {
@@ -49,21 +50,17 @@ class Handler extends ExceptionHandler
         if ($e instanceof \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException) {
             switch (get_class($e->getPrevious())) {
                 case \Tymon\JWTAuth\Exceptions\TokenExpiredException::class:
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Token has expired'
-                    ], $e->getStatusCode());
+                    return response()->json(['status' => 'error', 'message' => 'Token has expired'], $e->getStatusCode());
                 case \Tymon\JWTAuth\Exceptions\TokenInvalidException::class:
+                    return response()->json(['status' => 'error', 'message' => 'Token is invalid'], $e->getStatusCode());
                 case \Tymon\JWTAuth\Exceptions\TokenBlacklistedException::class:
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Token is invalid'
-                    ], $e->getStatusCode());
+                    return response()->json(['status' => 'error', 'message' => 'Token is blacklisted'], $e->getStatusCode());
                 default:
+                    return response()->json(['status' => 'error', 'message' => 'Token not found'], 401);
                     break;
             }
         }
 
-        // return parent::render($request, $e);
+        return parent::render($request, $e);
     }
 }
