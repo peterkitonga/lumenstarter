@@ -16,7 +16,8 @@ $router->get('/', function () use ($router) {
     return response()->json(['status' => 'success', 'message' => 'Welcome to '.env('MAIL_FROM_NAME'), 'framework' => $router->app->version()]);
 });
 
-$router->group(['prefix' => 'api/v1', 'namespace' => 'V1'], function () use ($router) {
+/*------------------------------------------ Api Version 1 Routes -------------------------------------------*/
+$router->group(['prefix' => 'api/v1', 'middleware' => 'cors', 'namespace' => 'V1'], function () use ($router) {
     /*------------------------------------------ Guest Routes -------------------------------------------*/
     $router->group(['prefix' => 'auth'], function () use ($router) {
         $router->post('login', ['uses' => 'Auth\AuthsController@login']);
@@ -32,13 +33,15 @@ $router->group(['prefix' => 'api/v1', 'namespace' => 'V1'], function () use ($ro
     
     /*------------------------------------------ JWT Auth Routes -------------------------------------------*/
     $router->group(['middleware' => 'jwt.auth'], function() use ($router) {
+        // Auth Routes
         $router->group(['prefix' => 'auth'], function () use ($router) {
             $router->get('user', ['uses' => 'Auth\AuthsController@profile']);
             $router->put('user/update', ['uses' => 'Auth\AuthsController@update']);
             $router->put('user/password', ['uses' => 'Auth\AuthsController@password']);
             $router->get('logout', ['uses' => 'Auth\AuthsController@logout']);
         });
-    
+
+        // User Routes
         $router->group(['prefix' => 'users'], function () use ($router) {
             $router->get('/',  ['uses' => 'UsersController@index']);  
             $router->post('store', ['uses' => 'UsersController@store']);
