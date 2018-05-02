@@ -103,7 +103,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      *
      * @return void
      */
-    public function activated()
+    public function activate()
     {
         $this->activation_status = 1;
         $this->activation_code = null;
