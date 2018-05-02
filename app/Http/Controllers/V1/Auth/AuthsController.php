@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AuthsController extends Controller
 {
@@ -23,7 +22,7 @@ class AuthsController extends Controller
      */
     public function __construct()
     {
-        
+        //
     }
 
     /**
@@ -141,7 +140,7 @@ class AuthsController extends Controller
             $user = User::query()->where('activation_code', '=', $code)->firstOrFail();
 
             // Activate the user
-            $user->activated();
+            $user->activate();
 
             return response()->json(['status' => 'success', 'message' => 'Your account has been successfully activated. You may proceed to login']);
         } catch(\Exception $exception) {
@@ -158,9 +157,25 @@ class AuthsController extends Controller
     {
         try {
             // Retrieve user details
-            $user = app('auth')->user();
+            $userId = app('auth')->user()->id;
 
-            return response()->json(['status' => 'success', 'data' => $user]);
+            $user = User::query()->where('id', '=', $userId)->with('roles')->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => (int) $item['id'],
+                        'name' => (string) $item['name'],
+                        'email' => (string) $item['email'],
+                        'active' => (bool) ($item['activation_status'] == 0 ? false : true),
+                        'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                        'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
+                        'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
+                        'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                        'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
+                        'last_seen' => (string) $item['last_seen'] == null ? null : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
+                    ];
+                })->toArray();
+
+            return response()->json(['status' => 'success', 'data' => $user[0]]);
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
         }
@@ -185,15 +200,15 @@ class AuthsController extends Controller
         }
 
         try {
-            $id = app('auth')->id();
-            $user = User::query()->findOrFail($id);
+            $userId = app('auth')->id();
+            $user = User::query()->where('id', '=', $userId);
 
             // Check if an image upload exists in the request
             if($request->has('image_select'))
             {
                 $image = $request->get('image_select');
             } else {
-                $image = $user['profile_image'];
+                $image = $user->first()['profile_image'];
             }
 
             // Update the user's details
@@ -203,7 +218,22 @@ class AuthsController extends Controller
                 'profile_image' => $image
             ]);
 
-            return response()->json(['status' => 'success', 'message' => 'Successfully updated your profile', 'data' => $user]);
+            $data = $user->with('roles')->get()->map(function ($item) {
+                return [
+                    'id' => (int) $item['id'],
+                    'name' => (string) $item['name'],
+                    'email' => (string) $item['email'],
+                    'active' => (bool) ($item['activation_status'] == 0 ? false : true),
+                    'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                    'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
+                    'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
+                    'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                    'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
+                    'last_seen' => (string) $item['last_seen'] == null ? null : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
+                ];
+            })->toArray();
+
+            return response()->json(['status' => 'success', 'message' => 'Successfully updated your profile', 'data' => $data[0]]);
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
         }
