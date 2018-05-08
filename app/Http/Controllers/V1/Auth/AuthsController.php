@@ -171,7 +171,7 @@ class AuthsController extends Controller
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                         'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
                         'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                        'last_seen' => (string) $item['last_seen'] == null ? null : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
+                        'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                     ];
                 })->toArray();
 
@@ -229,7 +229,7 @@ class AuthsController extends Controller
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                     'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
                     'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                    'last_seen' => (string) $item['last_seen'] == null ? null : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
+                    'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                 ];
             })->toArray();
 
