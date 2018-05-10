@@ -52,5 +52,10 @@ $router->group(['prefix' => 'api/v1', 'middleware' => 'cors', 'namespace' => 'V1
             $router->put('reactivate/{id}', ['uses' => 'UsersController@reactivate']);
             $router->delete('delete/{id}', ['uses' => 'UsersController@delete']);
         });
+
+        // User Routes
+        $router->group(['prefix' => 'roles'], function () use ($router) {
+            $router->get('/',  ['uses' => 'RolesController@index']);
+        });
     });
 });
