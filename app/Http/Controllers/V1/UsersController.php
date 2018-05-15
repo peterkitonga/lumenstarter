@@ -34,7 +34,7 @@ class UsersController extends Controller
     {
         try {
             // Get a list of user records and parse them as an array
-            $users = User::query()->withTrashed()->with('roles')->get()
+            $users = User::query()->withTrashed()->with('roles:id,role_name as name,created_at as date_added')->get()
                 ->map(function ($item) {
                     return [
                         'id' => (int) $item['id'],
@@ -44,7 +44,7 @@ class UsersController extends Controller
                         'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                         'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                         'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                         'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                     ];
@@ -98,7 +98,7 @@ class UsersController extends Controller
             $email = new MailCredentials(new User(['password' => $password, 'name' => $request->get('name'), 'email' => $request->get('email')]));
             Mail::to($request->get('email'))->queue($email);
 
-            $data = User::query()->where('id', '=', $user->id)->with('roles')->get()->map(function ($item) {
+            $data = User::query()->where('id', '=', $user->id)->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
                 return [
                     'id' => (int) $item['id'],
                     'name' => (string) $item['name'],
@@ -107,7 +107,7 @@ class UsersController extends Controller
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                     'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                     'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                 ];
@@ -128,7 +128,7 @@ class UsersController extends Controller
     public function show($id)
     {
         try {
-            $user = User::query()->withTrashed()->where('id', '=', $id)->with('roles')->get()
+            $user = User::query()->withTrashed()->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added')->get()
                 ->map(function ($item) {
                     return [
                         'id' => (int) $item['id'],
@@ -138,7 +138,7 @@ class UsersController extends Controller
                         'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                         'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                         'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                         'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                     ];
@@ -174,7 +174,7 @@ class UsersController extends Controller
         }
 
         try {
-            $user = User::query()->where('id', '=', $id)->with('roles');
+            $user = User::query()->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added');
 
             // Update the user's details
             $user->update([
@@ -191,7 +191,7 @@ class UsersController extends Controller
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                     'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                     'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                 ];
@@ -229,7 +229,7 @@ class UsersController extends Controller
             $user->findOrFail($id)->roles()->detach();
             $user->findOrFail($id)->roles()->attach($roleId);
 
-            $data = $user->where('id', '=', $id)->get()->map(function ($item) {
+            $data = $user->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
                 return [
                     'id' => (int) $item['id'],
                     'name' => (string) $item['name'],
@@ -238,13 +238,13 @@ class UsersController extends Controller
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                     'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                     'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                 ];
             })->toArray();
 
-            return response()->json(['status' => 'success', 'message' => 'Successfully updated the role for '.$data[0]['name'].' to '.$data[0]['role'], 'data' => $data[0]]);
+            return response()->json(['status' => 'success', 'message' => 'Successfully updated the role for '.$data[0]['name'].' to '.$data[0]['role']['name'], 'data' => $data[0]]);
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
         }
@@ -264,7 +264,7 @@ class UsersController extends Controller
             // Perform a soft delete(deactivate)
             $user->findOrFail($id)->delete();
 
-            $data = $user->withTrashed()->where('id', '=', $id)->get()->map(function ($item) {
+            $data = $user->withTrashed()->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
                 return [
                     'id' => (int) $item['id'],
                     'name' => (string) $item['name'],
@@ -273,7 +273,7 @@ class UsersController extends Controller
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                     'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                     'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                 ];
@@ -299,7 +299,7 @@ class UsersController extends Controller
             // Restore(reactivate) the user model
             $user->restore();
 
-            $data = $user->get()->map(function ($item) {
+            $data = $user->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
                 return [
                     'id' => (int) $item['id'],
                     'name' => (string) $item['name'],
@@ -308,7 +308,7 @@ class UsersController extends Controller
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                     'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                     'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                 ];
@@ -333,7 +333,7 @@ class UsersController extends Controller
 
             if (count($user->first()) !== 0)
             {
-                $data = $user->get()->map(function ($item) {
+                $data = $user->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
                     return [
                         'id' => (int) $item['id'],
                         'name' => (string) $item['name'],
@@ -342,7 +342,7 @@ class UsersController extends Controller
                         'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                         'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                         'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                         'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                     ];

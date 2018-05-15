@@ -159,7 +159,7 @@ class AuthsController extends Controller
             // Retrieve user details
             $userId = app('auth')->user()->id;
 
-            $user = User::query()->where('id', '=', $userId)->with('roles')->get()
+            $user = User::query()->where('id', '=', $userId)->with('roles:id,role_name as name,created_at as date_added')->get()
                 ->map(function ($item) {
                     return [
                         'id' => (int) $item['id'],
@@ -169,7 +169,7 @@ class AuthsController extends Controller
                         'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                         'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                         'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                         'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                     ];
@@ -218,7 +218,7 @@ class AuthsController extends Controller
                 'profile_image' => $image
             ]);
 
-            $data = $user->with('roles')->get()->map(function ($item) {
+            $data = $user->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
                 return [
                     'id' => (int) $item['id'],
                     'name' => (string) $item['name'],
@@ -227,7 +227,7 @@ class AuthsController extends Controller
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (string) isset($item['roles'][0]) ? $item['roles'][0]['role_name'] : null,
+                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
                     'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
                     'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
                 ];
