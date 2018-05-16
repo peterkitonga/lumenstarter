@@ -81,7 +81,7 @@ class AuthsController extends Controller
 
             // Send Activation Mail
             $email = new MailActivation(new User(['activation_code' => $user->activation_code, 'name' => $user->name]));
-            Mail::to($user->email)->send($email);
+            Mail::to($user->email)->queue($email);
 
             return response()->json(['status' => 'success', 'message' => 'You have successfully registered. Please click on the activation link sent to your email']);
         } catch(\Exception $exception) {
