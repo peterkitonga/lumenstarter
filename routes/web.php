@@ -37,7 +37,7 @@ $router->group(['prefix' => 'api/v1', 'middleware' => 'cors', 'namespace' => 'V1
         $router->group(['prefix' => 'auth'], function () use ($router) {
             $router->get('user', ['uses' => 'Auth\AuthsController@profile']);
             $router->put('user/update', ['uses' => 'Auth\AuthsController@update']);
-            $router->put('user/password', ['uses' => 'Auth\AuthsController@password']);
+            $router->put('user/password/update', ['uses' => 'Auth\AuthsController@password']);
             $router->get('logout', ['uses' => 'Auth\AuthsController@logout']);
         });
 
