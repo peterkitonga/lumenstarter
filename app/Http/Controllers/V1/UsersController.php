@@ -42,6 +42,7 @@ class UsersController extends Controller
                         'email' => (string) $item['email'],
                         'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                         'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                        'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                         'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                         'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
@@ -105,6 +106,7 @@ class UsersController extends Controller
                     'email' => (string) $item['email'],
                     'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                     'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
@@ -136,6 +138,7 @@ class UsersController extends Controller
                         'email' => (string) $item['email'],
                         'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                         'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                        'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                         'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                         'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
@@ -189,6 +192,7 @@ class UsersController extends Controller
                     'email' => (string) $item['email'],
                     'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                     'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
@@ -236,6 +240,7 @@ class UsersController extends Controller
                     'email' => (string) $item['email'],
                     'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                     'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
@@ -262,7 +267,8 @@ class UsersController extends Controller
             $user = User::query();
 
             // Perform a soft delete(deactivate)
-            $user->findOrFail($id)->delete();
+            $user->findOrFail($id)->update(['activation_status' => 0]);
+            $user->delete();
 
             $data = $user->withTrashed()->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
                 return [
@@ -271,6 +277,7 @@ class UsersController extends Controller
                     'email' => (string) $item['email'],
                     'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                     'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
@@ -295,6 +302,7 @@ class UsersController extends Controller
     {
         try {
             $user = User::query()->withTrashed()->where('id', '=', $id);
+            $user->update(['activation_status' => 1]);
 
             // Restore(reactivate) the user model
             $user->restore();
@@ -306,6 +314,7 @@ class UsersController extends Controller
                     'email' => (string) $item['email'],
                     'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                     'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                     'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                     'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
@@ -340,6 +349,7 @@ class UsersController extends Controller
                         'email' => (string) $item['email'],
                         'active' => (bool) ($item['activation_status'] == 0 ? false : true),
                         'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
+                        'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
                         'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
                         'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
                         'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
