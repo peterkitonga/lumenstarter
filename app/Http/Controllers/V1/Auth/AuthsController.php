@@ -204,7 +204,7 @@ class AuthsController extends Controller
             $user = User::query()->where('id', '=', $userId);
 
             // Check if an image upload exists in the request
-            if($request->has('image_select'))
+            if($request->has('image_select') && $request->get('image_select') !== '')
             {
                 $image = $request->get('image_select');
             } else {
