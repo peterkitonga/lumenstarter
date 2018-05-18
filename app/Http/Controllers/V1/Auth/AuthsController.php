@@ -61,7 +61,19 @@ class AuthsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = ['field' => $key, 'error' => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
         }
 
         try 
@@ -85,7 +97,7 @@ class AuthsController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'You have successfully registered. Please click on the activation link sent to your email']);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -103,7 +115,19 @@ class AuthsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = ['field' => $key, 'error' => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
         }
 
         try {
@@ -120,10 +144,10 @@ class AuthsController extends Controller
 
                 return $this->respondWithToken($token);
             } else {
-                return response()->json(['status' => 'error', 'message' => 'Unauthorized, credentials given are not correct'], 401);
+                return response()->json(['status' => 'error', 'message' => 'Unauthorized, credentials given are not correct'], 500);
             }
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -144,7 +168,7 @@ class AuthsController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Your account has been successfully activated. You may proceed to login']);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -177,7 +201,7 @@ class AuthsController extends Controller
 
             return response()->json(['status' => 'success', 'data' => $user[0]]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -196,7 +220,19 @@ class AuthsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = ['field' => $key, 'error' => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
         }
 
         try {
@@ -235,7 +271,7 @@ class AuthsController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Successfully updated your profile', 'data' => $data[0]]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -254,7 +290,19 @@ class AuthsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = ['field' => $key, 'error' => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
         }
 
         try {
@@ -274,7 +322,7 @@ class AuthsController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'The old password you entered is incorrect']);
             }
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -291,7 +339,7 @@ class AuthsController extends Controller
 
             return $this->respondWithToken($token);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -314,7 +362,7 @@ class AuthsController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Successfully logged out']);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 }

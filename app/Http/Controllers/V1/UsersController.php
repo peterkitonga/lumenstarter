@@ -52,7 +52,7 @@ class UsersController extends Controller
 
             return response()->json(['status' => 'success', 'data' => $users]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -71,7 +71,19 @@ class UsersController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = [$key => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
         }
 
         try {
@@ -115,7 +127,7 @@ class UsersController extends Controller
             
             return response()->json(['status' => 'success', 'message' => 'Successfully created user', 'data' => $data[0]]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -151,7 +163,7 @@ class UsersController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'User with id '.$id.' not found']);
             }
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -170,7 +182,19 @@ class UsersController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = [$key => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
         }
 
         try {
@@ -199,7 +223,7 @@ class UsersController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Successfully updated '.$data[0]['name'], 'data' => $data[0]]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -217,7 +241,19 @@ class UsersController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'message' => $validator->errors()]);
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = [$key => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
         }
 
         try {
@@ -246,7 +282,7 @@ class UsersController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Successfully updated the role for '.$data[0]['name'].' to '.$data[0]['role']['name'], 'data' => $data[0]]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -282,7 +318,7 @@ class UsersController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Successfully deactivated '.$data[0]['name'], 'data' => $data[0]]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -318,7 +354,7 @@ class UsersController extends Controller
 
             return response()->json(['status' => 'success', 'message' => 'Successfully reactivated '.$data[0]['name'], 'data' => $data[0]]);
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 
@@ -358,7 +394,7 @@ class UsersController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'User with id '.$id.' not found']);
             }
         } catch(\Exception $exception) {
-            return response()->json(['status' => 'error', 'message' => $exception->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
     }
 }
