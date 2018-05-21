@@ -6,9 +6,12 @@ use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Mail\MailActivation;
+use Illuminate\Http\Testing\MimeType;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class AuthsController extends Controller
@@ -242,7 +245,19 @@ class AuthsController extends Controller
             // Check if an image upload exists in the request
             if($request->has('image_select') && $request->get('image_select') !== '')
             {
-                $image = $request->get('image_select');
+                if ($user->first()['profile_image'] !== null)
+                {
+                    $filename = trim(str_replace(Storage::url(''), '', $user->first()['profile_image']), '/');
+                    Storage::disk(env('FILESYSTEM_DRIVER'))->delete($filename);
+                }
+
+                $explodeEncodedString = explode('base64,', $request->get('image_select'));
+                $mime = trim(str_replace('data:', '', $explodeEncodedString[0]), ';');
+                $extension = MimeType::search($mime);
+                $filename = Carbon::now()->timestamp.'.'.$extension;
+                $image = Storage::url($filename);
+
+                Storage::disk(env('FILESYSTEM_DRIVER'))->put($filename, base64_decode($explodeEncodedString[1]));
             } else {
                 $image = $user->first()['profile_image'];
             }
