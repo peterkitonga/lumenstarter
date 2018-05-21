@@ -167,7 +167,7 @@
                                                         <td width="100%" colspan="3" align="center" style="padding-bottom:10px;padding-top:25px;">
                                                             <div class="contentEditableContainer contentTextEditable">
                                                                 <div class="contentEditable" align='center' >
-                                                                    <h2>Welcome to {!! env('MAIL_FROM_NAME') !!}</h2>
+                                                                    <h2>Welcome to {!! env('APP_NAME') !!}</h2>
                                                                 </div>
                                                             </div>
                                                         </td>
