@@ -86,6 +86,7 @@ $app->routeMiddleware([
 
 $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
+$app->register(Illuminate\Filesystem\FilesystemServiceProvider::class);
 $app->register(Illuminate\Mail\MailServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(Barryvdh\Cors\ServiceProvider::class);
@@ -109,6 +110,7 @@ $app->router->group([
     require __DIR__.'/../routes/web.php';
 });
 
+$app->configure('filesystems');
 $app->configure('services');
 $app->configure('mail');
 
