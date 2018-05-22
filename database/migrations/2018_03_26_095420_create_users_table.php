@@ -21,7 +21,7 @@ class CreateUsersTable extends Migration
             $table->longText('profile_image')->nullable();
             $table->string('activation_code', 60)->nullable();
             $table->boolean('activation_status')->default(0);
-            $table->boolean('is_logged_in')->default(1);
+            $table->boolean('is_logged_in')->default(0);
             $table->dateTime('last_seen')->nullable();
             $table->timestamps();
             $table->softDeletes();
