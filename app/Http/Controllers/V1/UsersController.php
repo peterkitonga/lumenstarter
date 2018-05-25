@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Http\Resources\UserCollection;
+use App\Role;
 use App\User;
 use App\Mail\MailCredentials;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\User as UserResource;
 
 class UsersController extends Controller
 {
@@ -28,29 +30,17 @@ class UsersController extends Controller
     /**
      * Displays a list of records.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserCollection|\Illuminate\Http\JsonResponse
      */
     public function index()
     {
         try {
             // Get a list of user records and parse them as an array
-            $users = User::query()->withTrashed()->with('roles:id,role_name as name,created_at as date_added')->get()
-                ->map(function ($item) {
-                    return [
-                        'id' => (int) $item['id'],
-                        'name' => (string) $item['name'],
-                        'email' => (string) $item['email'],
-                        'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                        'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                        'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                        'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                        'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                        'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                    ];
-                })->toArray();
+            $users = User::query()->withTrashed()->get();
 
-            return response()->json(['status' => 'success', 'data' => $users]);
+            $response = new UserCollection($users);
+
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -60,7 +50,7 @@ class UsersController extends Controller
      * Stores a given record.
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -108,24 +98,12 @@ class UsersController extends Controller
 
             // Send an email with the password generated
             $email = new MailCredentials(new User(['password' => $password, 'name' => $request->get('name'), 'email' => $request->get('email')]));
-            Mail::to($request->get('email'))->queue($email);
+            Mail::to($request->get('email'))->sendNow($email);
 
-            $data = User::query()->where('id', '=', $user->id)->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
-                return [
-                    'id' => (int) $item['id'],
-                    'name' => (string) $item['name'],
-                    'email' => (string) $item['email'],
-                    'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                    'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                    'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                    'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                    'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                ];
-            })->toArray();
-            
-            return response()->json(['status' => 'success', 'message' => 'Successfully created user', 'data' => $data[0]]);
+            $resource = new UserResource($user);
+            $response = $resource->additional(['status' => 'success', 'message' => 'Successfully created user']);
+
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -135,30 +113,19 @@ class UsersController extends Controller
      * Show the given record.
      *
      * @param $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
         try {
-            $user = User::query()->withTrashed()->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added')->get()
-                ->map(function ($item) {
-                    return [
-                        'id' => (int) $item['id'],
-                        'name' => (string) $item['name'],
-                        'email' => (string) $item['email'],
-                        'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                        'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                        'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                        'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                        'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                        'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                    ];
-                })->toArray();
+            $user = User::query()->withTrashed()->where('id', '=', $id)->first();
 
             if (count($user) !== 0)
             {
-                return response()->json(['status' => 'success', 'data' => $user[0]]);
+                $resource = new UserResource($user);
+                $response = $resource->additional(['status' => 'success']);
+
+                return $response;
             } else {
                 return response()->json(['status' => 'error', 'message' => 'User with id '.$id.' not found']);
             }
@@ -172,7 +139,7 @@ class UsersController extends Controller
      *
      * @param Request $request
      * @param $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -198,7 +165,7 @@ class UsersController extends Controller
         }
 
         try {
-            $user = User::query()->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added');
+            $user = User::query()->findOrFail($id);
 
             // Update the user's details
             $user->update([
@@ -206,22 +173,10 @@ class UsersController extends Controller
                 'email' => $request->get('email')
             ]);
 
-            $data = $user->get()->map(function ($item) {
-                return [
-                    'id' => (int) $item['id'],
-                    'name' => (string) $item['name'],
-                    'email' => (string) $item['email'],
-                    'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                    'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                    'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                    'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                    'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                ];
-            })->toArray();
+            $resource = new UserResource($user);
+            $response = $resource->additional(['status' => 'success', 'message' => 'Successfully updated '.$user['name']]);
 
-            return response()->json(['status' => 'success', 'message' => 'Successfully updated '.$data[0]['name'], 'data' => $data[0]]);
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -232,7 +187,7 @@ class UsersController extends Controller
      *
      * @param Request $request
      * @param $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function role(Request $request, $id)
     {
@@ -259,28 +214,18 @@ class UsersController extends Controller
         try {
             $roleId = $request->get('role_select');
 
-            $user = User::query();
+            $user = User::query()->findOrFail($id);
 
             // Detach the role form the user and attach a new role
-            $user->findOrFail($id)->roles()->detach();
-            $user->findOrFail($id)->roles()->attach($roleId);
+            $user->roles()->detach();
+            $user->roles()->attach($roleId);
 
-            $data = $user->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
-                return [
-                    'id' => (int) $item['id'],
-                    'name' => (string) $item['name'],
-                    'email' => (string) $item['email'],
-                    'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                    'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                    'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                    'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                    'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                ];
-            })->toArray();
+            $role = Role::query()->findOrFail($roleId);
 
-            return response()->json(['status' => 'success', 'message' => 'Successfully updated the role for '.$data[0]['name'].' to '.$data[0]['role']['name'], 'data' => $data[0]]);
+            $resource = new UserResource($user);
+            $response = $resource->additional(['status' => 'success', 'message' => 'Successfully updated the role for '.$user['name'].' to '.$role['role_name']]);
+
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -290,33 +235,21 @@ class UsersController extends Controller
      * Deactivate the given record.
      *
      * @param $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function deactivate($id)
     {
         try {
-            $user = User::query();
+            $user = User::query()->findOrFail($id);
 
             // Perform a soft delete(deactivate)
-            $user->findOrFail($id)->update(['activation_status' => 0]);
+            $user->update(['activation_status' => 0]);
             $user->delete();
 
-            $data = $user->withTrashed()->where('id', '=', $id)->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
-                return [
-                    'id' => (int) $item['id'],
-                    'name' => (string) $item['name'],
-                    'email' => (string) $item['email'],
-                    'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                    'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                    'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                    'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                    'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                ];
-            })->toArray();
+            $resource = new UserResource($user);
+            $response = $resource->additional(['status' => 'success', 'message' => 'Successfully deactivated '.$user['name']]);
 
-            return response()->json(['status' => 'success', 'message' => 'Successfully deactivated '.$data[0]['name'], 'data' => $data[0]]);
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -326,7 +259,7 @@ class UsersController extends Controller
      * Reactivate the given record.
      *
      * @param $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function reactivate($id)
     {
@@ -337,22 +270,10 @@ class UsersController extends Controller
             // Restore(reactivate) the user model
             $user->restore();
 
-            $data = $user->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
-                return [
-                    'id' => (int) $item['id'],
-                    'name' => (string) $item['name'],
-                    'email' => (string) $item['email'],
-                    'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                    'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                    'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                    'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                    'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                ];
-            })->toArray();
+            $resource = new UserResource($user->first());
+            $response = $resource->additional(['status' => 'success', 'message' => 'Successfully reactivated '.$user->first()['name']]);
 
-            return response()->json(['status' => 'success', 'message' => 'Successfully reactivated '.$data[0]['name'], 'data' => $data[0]]);
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -362,7 +283,7 @@ class UsersController extends Controller
      * Delete the given record.
      *
      * @param $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function delete($id)
     {
@@ -371,25 +292,15 @@ class UsersController extends Controller
 
             if (count($user->first()) !== 0)
             {
-                $data = $user->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
-                    return [
-                        'id' => (int) $item['id'],
-                        'name' => (string) $item['name'],
-                        'email' => (string) $item['email'],
-                        'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                        'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                        'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                        'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                        'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                        'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                    ];
-                })->toArray();
+                $data = $user->first();
 
                 // Perform a permanent delete
                 $user->forceDelete();
 
-                return response()->json(['status' => 'success', 'message' => 'Successfully deleted '.$data[0]['name'], 'data' => $data[0]]);
+                $resource = new UserResource($data);
+                $response = $resource->additional(['status' => 'success', 'message' => 'Successfully deleted '.$data['name']]);
+
+                return $response;
             } else {
                 return response()->json(['status' => 'error', 'message' => 'User with id '.$id.' not found']);
             }
