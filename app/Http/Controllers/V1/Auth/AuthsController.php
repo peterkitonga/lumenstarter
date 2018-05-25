@@ -7,12 +7,12 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Mail\MailActivation;
 use Illuminate\Http\Testing\MimeType;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\User as UserResource;
 
 class AuthsController extends Controller
 {
@@ -178,7 +178,7 @@ class AuthsController extends Controller
     /**
      * Get the authenticated user.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function profile()
     {
@@ -186,23 +186,12 @@ class AuthsController extends Controller
             // Retrieve user details
             $userId = app('auth')->user()->id;
 
-            $user = User::query()->where('id', '=', $userId)->with('roles:id,role_name as name,created_at as date_added')->get()
-                ->map(function ($item) {
-                    return [
-                        'id' => (int) $item['id'],
-                        'name' => (string) $item['name'],
-                        'email' => (string) $item['email'],
-                        'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                        'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                        'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                        'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                        'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                        'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                        'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                    ];
-                })->toArray();
+            $user = User::query()->findOrFail($userId);
 
-            return response()->json(['status' => 'success', 'data' => $user[0]]);
+            $resource = new UserResource($user);
+            $response = $resource->additional(['status' => 'success']);
+
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -212,7 +201,7 @@ class AuthsController extends Controller
      * Update the authenticated user's profile.
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function update(Request $request)
     {
@@ -240,14 +229,14 @@ class AuthsController extends Controller
 
         try {
             $userId = app('auth')->id();
-            $user = User::query()->where('id', '=', $userId);
+            $user = User::query()->findOrFail($userId);
 
             // Check if an image upload exists in the request
             if($request->has('image_select') && $request->get('image_select') !== '')
             {
-                if ($user->first()['profile_image'] !== null)
+                if ($user['profile_image'] !== null)
                 {
-                    $filename = trim(str_replace(Storage::url(''), '', $user->first()['profile_image']), '/');
+                    $filename = trim(str_replace(Storage::url(''), '', $user['profile_image']), '/');
                     Storage::disk(env('FILESYSTEM_DRIVER'))->delete($filename);
                 }
 
@@ -259,7 +248,7 @@ class AuthsController extends Controller
 
                 Storage::disk(env('FILESYSTEM_DRIVER'))->put($filename, base64_decode($explodeEncodedString[1]));
             } else {
-                $image = $user->first()['profile_image'];
+                $image = $user['profile_image'];
             }
 
             // Update the user's details
@@ -269,22 +258,10 @@ class AuthsController extends Controller
                 'profile_image' => $image
             ]);
 
-            $data = $user->with('roles:id,role_name as name,created_at as date_added')->get()->map(function ($item) {
-                return [
-                    'id' => (int) $item['id'],
-                    'name' => (string) $item['name'],
-                    'email' => (string) $item['email'],
-                    'is_logged_in' => (bool) ($item['is_logged_in'] == 0 ? false : true),
-                    'is_active' => (bool) ($item['activation_status'] == 0 ? false : true),
-                    'is_deactivated' => (bool) ($item['deleted_at'] == null ? false : true),
-                    'image' => (string) $item['profile_image'] == null ? null : $item['profile_image'],
-                    'role' => (array) isset($item['roles'][0]) ? $item['roles'][0] : [],
-                    'date_added' => (string) Carbon::parse($item['created_at'])->format('j M Y h:i A'),
-                    'last_seen' => (string) $item['last_seen'] == null ? 'Never' : Carbon::parse($item['last_seen'])->format('j M Y h:i A')
-                ];
-            })->toArray();
+            $resource = new UserResource($user);
+            $response = $resource->additional(['status' => 'success', 'message' => 'Successfully updated your profile']);
 
-            return response()->json(['status' => 'success', 'message' => 'Successfully updated your profile', 'data' => $data[0]]);
+            return $response;
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
@@ -294,7 +271,7 @@ class AuthsController extends Controller
      * Updates the authenticated user's password.
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return UserResource|\Illuminate\Http\JsonResponse
      */
     public function password(Request $request)
     {
@@ -331,8 +308,11 @@ class AuthsController extends Controller
 
                 // Update the password
                 $user->update(['password' => Hash::make($request->get('password'))]);
-    
-                return response()->json(['status' => 'success', 'message' => 'Successfully updated your password']);
+
+                $resource = new UserResource($user);
+                $response = $resource->additional(['status' => 'success', 'message' => 'Successfully updated your password']);
+
+                return $response;
             } else {
                 return response()->json(['status' => 'error', 'message' => 'The old password you entered is incorrect']);
             }
