@@ -16,10 +16,7 @@ class RoleCollection extends ResourceCollection
     {
         return [
             'status' => 'success',
-            'data' => $this->collection,
-            'links' => [
-                'self' => 'link-value',
-            ],
+            'data' => $this->collection
         ];
     }
 }
