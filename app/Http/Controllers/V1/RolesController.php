@@ -30,7 +30,7 @@ class RolesController extends Controller
     {
         try {
             // Get a list of role records and parse them as an array
-            $roles = Role::query()->get();
+            $roles = Role::query()->paginate(10);
 
             $response = new RoleCollection($roles);
 

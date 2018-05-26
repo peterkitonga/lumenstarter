@@ -36,7 +36,7 @@ class UsersController extends Controller
     {
         try {
             // Get a list of user records and parse them as an array
-            $users = User::query()->withTrashed()->get();
+            $users = User::query()->withTrashed()->paginate(10);
 
             $response = new UserCollection($users);
 
