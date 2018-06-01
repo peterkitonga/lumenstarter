@@ -1,15 +1,16 @@
 ## Project Setup
 
 - Steps:
-1. Clone project
-2. cd to project
-3. run 'composer install'
-4. run 'cp .env.example .env'
-5. Edit .env file to your liking
-6. run 'php artisan key:generate'
-7. run 'php artisan jwt:secret'
-8. run 'php artisan migrate'
-9. run 'php artisan db:seed --class=AuthTablesSeeder'
+1. Setup database
+2. Clone project
+3. cd to project
+4. run 'composer install'
+5. run 'cp .env.example .env'
+6. Edit .env file to your liking
+7. run 'php artisan key:generate'
+8. run 'php artisan jwt:secret'
+9. run 'php artisan migrate'
+10. run 'php artisan db:seed --class=AuthTablesSeeder'
 
 # Lumen PHP Framework
 
