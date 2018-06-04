@@ -17,7 +17,7 @@ class MailCredentials extends Mailable
     /**
      * Create a new message instance.
      *
-     * @return void
+     * @param User $user
      */
     public function __construct(User $user)
     {
@@ -32,7 +32,7 @@ class MailCredentials extends Mailable
     public function build()
     {
         return $this->from(env('MAIL_FROM_ADDRESS'))
-            ->subject(env('MAIL_FROM_NAME').' Welcome')
+            ->subject(env('MAIL_FROM_NAME').' - Welcome')
             ->view('emails.credentials')
             ->with([
                 'name' => $this->user->name,
