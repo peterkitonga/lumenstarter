@@ -23,6 +23,8 @@ $router->group(['prefix' => 'api/v1', 'middleware' => 'cors', 'namespace' => 'V1
         $router->post('login', ['uses' => 'Auth\AuthsController@login']);
         $router->post('register', ['uses' => 'Auth\AuthsController@register']);
         $router->get('activate/{code}', ['uses' => 'Auth\AuthsController@activate']);
+        $router->post('email/reset/password/link', ['uses' => 'Auth\AuthsController@email']);
+        $router->post('reset/password', ['uses' => 'Auth\AuthsController@reset']);
         $router->get('logout', ['uses' => 'Auth\AuthsController@logout']);
     });
 
