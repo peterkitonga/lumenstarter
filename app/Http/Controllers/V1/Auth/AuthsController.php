@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\V1\Auth;
 
+use App\Mail\MailResetPassword;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Mail\MailActivation;
 use Illuminate\Http\Testing\MimeType;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
@@ -96,7 +98,7 @@ class AuthsController extends Controller
 
             // Send Activation Mail
             $email = new MailActivation(new User(['activation_code' => $user->activation_code, 'name' => $user->name]));
-            Mail::to($user->email)->queue($email);
+            Mail::to($user->email)->sendNow($email);
 
             return response()->json(['status' => 'success', 'message' => 'You have successfully registered. Please click on the activation link sent to your email']);
         } catch(\Exception $exception) {
@@ -314,7 +316,7 @@ class AuthsController extends Controller
 
                 return $response;
             } else {
-                return response()->json(['status' => 'error', 'message' => 'The old password you entered is incorrect']);
+                return response()->json(['status' => 'error', 'message' => 'The old password you entered is incorrect'], 500);
             }
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
@@ -356,6 +358,113 @@ class AuthsController extends Controller
             app('auth')->logout();
 
             return response()->json(['status' => 'success', 'message' => 'Successfully logged out']);
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Send a reset password email with token
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function email(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255'
+        ]);
+
+        if ($validator->fails())
+        {
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = ['field' => $key, 'error' => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
+        }
+
+        try {
+            // Retrieve user details
+            $user = User::query()->where('email', '=', $request->get('email'))->first();
+
+            if ($user)
+            {
+                $token = str_random(64);
+                DB::table('password_resets')->insert(['email' => $user->email, 'token' => $token, 'created_at' => Carbon::now()->toDateTimeString()]);
+
+                // Send Reset Password Mail
+                $email = new MailResetPassword(new User(['name' => $user->name, 'email' => $user->email]), $token);
+                Mail::to($user->email)->sendNow($email);
+
+                return response()->json(['status' => 'success', 'message' => 'Successfully sent you a reset password link. Please check your email'], 200);
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'We do not have any record of that email'], 500);
+            }
+        } catch(\Exception $exception) {
+            return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Resets password for the email with the given token
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function reset(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required|min:64|max:255',
+            'password' => 'required|min:6|confirmed',
+            'password_confirmation' => 'required|min:6'
+        ]);
+
+        if ($validator->fails())
+        {
+            $errorResponse = [];
+            $errors = array_map(function ($value) {
+                return implode(' ', $value);
+            }, $validator->errors()->toArray());
+            $errorKeys = $validator->errors()->keys();
+
+            foreach ($errorKeys as $key)
+            {
+                $array = ['field' => $key, 'error' => $errors[$key]];
+                array_push($errorResponse, $array);
+            }
+
+            return response()->json(['status' => 'error', 'message' => $errorResponse], 500);
+        }
+
+        try {
+            // Retrieve password reset details
+            $reset = DB::table('password_resets')->where('token', '=', $request->get('token'));
+
+            if ($reset)
+            {
+                $email = $reset->first()->email;
+                $user = User::query()->where('email', '=', $email)->update(['password' => Hash::make($request->get('password'))]);
+
+                if ($user)
+                {
+                    $reset->delete();
+
+                    return response()->json(['status' => 'success', 'message' => 'Successfully reset your password. You may proceed to login'], 200);
+                } else {
+                    return response()->json(['status' => 'error', 'message' => 'Something went wrong. Please try again'], 500);
+                }
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'Token given does not match our records'], 500);
+            }
         } catch(\Exception $exception) {
             return response()->json(['status' => 'error', 'message' => $exception->getMessage()], 500);
         }
