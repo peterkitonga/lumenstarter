@@ -19,7 +19,7 @@ class Role extends Resource
             'id' => (int) $this->id,
             'name' => (string) $this->role_name,
             'permissions' => (array) $this->role_permissions,
-            'date_added' => (string) Carbon::parse($this->created_at)->format('j M Y h:i A')
+            'date_added' => (string) Carbon::parse($this->created_at)->format('d M Y h:i A')
         ];
     }
 }
