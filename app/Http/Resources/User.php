@@ -25,8 +25,8 @@ class User extends Resource
             'is_deactivated' => (bool) ($this->deleted_at == null ? false : true),
             'image' => (string) $this->profile_image == null ? null : $this->profile_image,
             'role' => (array) isset($this->roles[0]) ? new RoleResource($this->roles[0]) : [],
-            'date_added' => (string) Carbon::parse($this->created_at)->format('j M Y h:i A'),
-            'last_seen' => (string) $this->last_seen == null ? 'Never' : Carbon::parse($this->last_seen)->format('j M Y h:i A')
+            'date_added' => (string) Carbon::parse($this->created_at)->format('d M Y h:i A'),
+            'last_seen' => (string) $this->last_seen == null ? 'Never' : Carbon::parse($this->last_seen)->format('d M Y h:i A')
         ];
     }
 }
