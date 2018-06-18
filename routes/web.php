@@ -13,7 +13,7 @@
 
 $router = app()->router;
 $router->get('/', function () use ($router) {
-    return response()->json(['status' => 'success', 'message' => 'Welcome to '.env('MAIL_FROM_NAME'), 'framework' => $router->app->version()]);
+    return response()->json(['status' => 'success', 'message' => 'Welcome to '.env('APP_NAME'), 'framework' => $router->app->version()]);
 });
 
 /*------------------------------------------ Api Version 1 Routes -------------------------------------------*/
