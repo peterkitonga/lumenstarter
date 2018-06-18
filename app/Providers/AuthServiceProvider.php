@@ -53,12 +53,13 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function registerPolicies()
     {
-        Gate::define('admin-access', function (User $user) {
-            return $user->hasAccess(['admin-access']);
-        });
-        
-        Gate::define('subscriber-access', function (User $user) {
-            return $user->hasAccess(['subscriber-access']);
-        });
+        $roles = \App\Role::query()->pluck('role_slug');
+
+        foreach ($roles as $role)
+        {
+            Gate::define($role.'-access', function (User $user) use ($role) {
+                return $user->hasAccess([$role.'-access']);
+            });
+        }
     }
 }
