@@ -38,7 +38,7 @@ class AuthTablesSeeder extends Seeder
             'role_name' => 'Administrator',
             'role_slug' => 'administrator',
             'role_permissions' => [
-                'admin-access' => true,
+                'administrator-access' => true,
             ]
         ]);
 
