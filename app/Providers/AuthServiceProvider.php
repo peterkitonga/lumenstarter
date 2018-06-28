@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -53,13 +55,16 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function registerPolicies()
     {
-        $roles = \App\Role::query()->pluck('role_slug');
-
-        foreach ($roles as $role)
+        if (Schema::connection(env('DB_CONNECTION'))->hasTable('roles'))
         {
-            Gate::define($role.'-access', function (User $user) use ($role) {
-                return $user->hasAccess([$role.'-access']);
-            });
+            $roles = \App\Role::query()->pluck('role_slug');
+
+            foreach ($roles as $role)
+            {
+                Gate::define($role.'-access', function (User $user) use ($role) {
+                    return $user->hasAccess([$role.'-access']);
+                });
+            }
         }
     }
 }
