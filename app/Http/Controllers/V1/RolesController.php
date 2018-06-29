@@ -24,13 +24,17 @@ class RolesController extends Controller
     /**
      * Displays a list of records.
      *
+     * @param Request $request
      * @return RoleCollection|\Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
+            // Get the limit of records per page
+            $limit = $request->has('limit') ? $request->get('limit') : 10;
+
             // Get a list of role records and parse them as an array
-            $roles = Role::query()->paginate(10);
+            $roles = Role::query()->paginate($limit);
 
             $response = new RoleCollection($roles);
 

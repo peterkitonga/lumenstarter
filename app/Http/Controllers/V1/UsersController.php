@@ -30,13 +30,17 @@ class UsersController extends Controller
     /**
      * Displays a list of records.
      *
+     * @param Request $request
      * @return UserCollection|\Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
+            // Get the limit of records per page
+            $limit = $request->has('limit') ? $request->get('limit') : 10;
+
             // Get a list of user records and parse them as an array
-            $users = User::query()->withTrashed()->paginate(10);
+            $users = User::query()->withTrashed()->paginate($limit);
 
             $response = new UserCollection($users);
 
