@@ -25,11 +25,13 @@ class JwtMiddleware extends BaseMiddleware
             return $next($request);
         } catch (Exception $exception) {
             if ($exception instanceof \Tymon\JWTAuth\Exceptions\TokenInvalidException) {
-                return response()->json(['status' => 'Token is Invalid'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['status' => 'error', 'message' => 'Authorization token is Invalid'], Response::HTTP_UNAUTHORIZED);
             } else if ($exception instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException) {
-                return response()->json(['status' => 'Token is Expired'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['status' => 'error', 'message' => 'Authorization token is Expired'], Response::HTTP_UNAUTHORIZED);
+            } else if ($exception instanceof \Tymon\JWTAuth\Exceptions\TokenBlacklistedException) {
+                return response()->json(['status' => 'error', 'message' => 'Authorization token is Blacklisted'], Response::HTTP_UNAUTHORIZED);
             } else {
-                return response()->json(['status' => 'Authorization Token not found'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['status' => 'error', 'message' => 'Authorization token not found'], Response::HTTP_UNAUTHORIZED);
             }
         }
     }
