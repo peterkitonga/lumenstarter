@@ -2,7 +2,6 @@
 
 namespace App\Exceptions;
 
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
@@ -80,18 +79,6 @@ class Handler extends ExceptionHandler
             $httpStatusCode = Response::HTTP_INTERNAL_SERVER_ERROR;
             $message = Response::$statusTexts[$httpStatusCode];
         }
-
-        $exceptionLog = [
-            'path' => $request->path(),
-            'method' => $request->method(),
-            'request' => json_encode($request->toArray()),
-            'message' => empty($exception->getMessage()) ? $message : $exception->getMessage(),
-            'line' => $exception->getLine(),
-            'file' => $exception->getFile(),
-            'trace' => $exception->getTraceAsString()
-        ];
-
-        \Illuminate\Support\Facades\Log::error(json_encode($exceptionLog, true));
 
         return response()->json([
             'status'  => 'error',
