@@ -69,7 +69,7 @@ $app->routeMiddleware([
     'cors' => Barryvdh\Cors\HandleCors::class,
     'auth' => App\Http\Middleware\Authenticate::class,
     'access.role' => App\Http\Middleware\CheckAccess::class,
-    'jwt.auth' => Tymon\JWTAuth\Http\Middleware\GetUserFromToken::class,
+    'jwt.auth' => \App\Http\Middleware\JwtMiddleware::class,
     'jwt.refresh' => Tymon\JWTAuth\Http\Middleware\RefreshToken::class
 ]);
 
